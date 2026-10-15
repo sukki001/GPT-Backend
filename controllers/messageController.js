@@ -1,7 +1,6 @@
 import Chat from "../model/chatSchema.js";
 import Message from "../model/messageSchema.js";
 import mongoose from "mongoose";
-import openRouter from "../config/openRouter.js"
 import { generateAIResponse } from "../service/openRouterService.js";
 import {buildMessagesForAI} from "../utils/chatContext.js"
 import { resetUsageIfNeeded , hasTokenLimitReached , addUserTokenUsage } from "../utils/userUsage.js";
