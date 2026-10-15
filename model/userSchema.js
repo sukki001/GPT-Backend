@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
         },
         tokenLimit : {
             type : Number,
-            default : 10000,
+            default : process.env.TOKEN_LIMIT,
         },
 
         resetAt : {
@@ -47,3 +47,4 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User" , userSchema);
 
 export default User;
+

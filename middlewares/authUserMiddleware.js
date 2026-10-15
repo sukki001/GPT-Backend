@@ -1,42 +1,44 @@
 import jwt from "jsonwebtoken";
-import User from "../model/userSchema.js";
+import { redisClient } from "../config/redis.js";
 
-const authUserMiddleware = async (req , res , next )=>{
-    try{
+const authUserMiddleware = async (req, res, next) => {
+    try {
+        const { token } = req.cookies;
 
-        const {token} = req.cookies;
-
-        if(!token)
-        {
+        if (!token) {
             return res.status(401).json({
-                messaage : "You need to login first"
-            })
+                message: "You need to login first"
+            });
         }
 
+        const blockedToken = await redisClient.get(
+            `blocklist:${token}`
+        );
 
-        const payload = jwt.verify(token , process.env.JWT_SECRET);
-
-        const existingUser = await User.findById(payload.id);
-
-        if(!existingUser)
-        {
-            res.status(404).json({
-                message : "User doesn't exist"
-            })
+        if (blockedToken) {
+            return res.status(401).json({
+                message: "Please login again"
+            });
         }
-        
-        req.user = existingUser;
-        
+
+        const payload = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+        req.userId = payload.id;
+        req.token = token;
+        req.tokenPayload = payload;
+
         next();
+    } catch (error) {
         
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal server error"
+        });
     }
-    catch(err)
-    {   
-        console.log(err);
-        res.status(500).json({
-            message : "Internal Server Error"
-        })
-    }
-}
+};
 
 export default authUserMiddleware;

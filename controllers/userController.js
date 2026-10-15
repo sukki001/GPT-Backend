@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 import {signupSchema, loginSchema} from "../validators/userValidators.js"
 import Chat from "../model/chatSchema.js"
 import Message from "../model/messageSchema.js";
-
+import {redisClient} from "../config/redis.js"
 
 
 
@@ -142,20 +142,44 @@ export const login = async (req , res)=>{
 
 }
 
-export const logout = async (req , res)=>{
-    
-     res.clearCookie("token",{
-        httpOnly: true,
-        secure: false,
-    })
+export const logout = async (req,res)=>{
+    // logut
+    try{
 
-    res.status(200).json({
-        message: "User Logged Out Successfully"
-    })
+        if(req.token){
+            const token = req.token;
+            const payload = req.tokenPayload;
 
+            const currentTime = Math.floor(Date.now() / 1000);
+            const remainingTime = payload.exp - currentTime;
 
+            if (remainingTime > 0) {
+                await redisClient.set(
+                    `blocklist:${token}`,
+                    "blocked",
+                    {
+                        EX: remainingTime
+                    }
+                );
+            }
+        }
+
+        res.clearCookie("token",{
+            httpOnly: true,
+            secure: false,
+        })
+
+        res.status(200).json({
+            message: "User Logged Out Successfully"
+        })
+    }
+    catch(error){
+        return res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
 }
-
+    
 export const profile = async (req , res)=>{
     try{
         //profile info send kr do
